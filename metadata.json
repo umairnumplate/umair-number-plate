@@ -1,0 +1,5 @@
+{
+  "name": "Umair Number Plate",
+  "description": "An application to log daily work like number plates, name plates, and stickers. Features real-time data sync, CSV export/import, search, and filtering, all designed for a fast and efficient workflow across multiple devices.",
+  "requestFramePermissions": []
+}
