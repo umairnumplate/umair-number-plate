@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { dbService } from '../services/firebaseService';
+import { dbService, isCloudEnabled } from '../services/firebaseService';
 import { LogEntry, WorkType } from '../types';
 import { exportToCsv, generateTabSeparated, copyToClipboard } from '../utils/helpers';
 import Header from './Header';
@@ -10,6 +10,7 @@ import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { SearchIcon } from './icons/SearchIcon';
 import { ClearIcon } from './icons/ClearIcon';
+import { CloudIcon } from './icons/CloudIcon';
 import Papa from 'papaparse';
 
 const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string; color: string; }> = ({ icon, title, value, color }) => (
@@ -29,6 +30,7 @@ const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string; 
 
 const Dashboard: React.FC = () => {
     const [logs, setLogs] = useState<LogEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [logToEdit, setLogToEdit] = useState<LogEntry | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -38,12 +40,14 @@ const Dashboard: React.FC = () => {
     const [notification, setNotification] = useState('');
 
     useEffect(() => {
+        // Bind List -> Cloud Table (Automatic Listener)
         const unsubscribe = dbService.onLogsSnapshot((snapshotLogs) => {
             const logsWithSerial = snapshotLogs.map((log, index) => ({
                 ...log,
                 serialNumber: snapshotLogs.length - index
             }));
             setLogs(logsWithSerial);
+            setIsLoading(false);
         });
         return () => unsubscribe();
     }, []);
@@ -175,6 +179,7 @@ const Dashboard: React.FC = () => {
                     isComplete: row['Status']?.toLowerCase() === 'complete' || false,
                     advance: parseFloat(row['Advance']) || 0,
                     baqaya: parseFloat(row['Baqaya']) || 0,
+                    imageUrl: row['Image URL'] || undefined,
                 }));
                 
                 if (importedLogs.length > 0) {
@@ -196,6 +201,21 @@ const Dashboard: React.FC = () => {
         <div className="min-h-screen">
             <Header onAddNew={handleAddNew} />
             <main className="p-4 mx-auto max-w-7xl sm:px-6 lg:p-8">
+                
+                {/* Connection Status Indicator */}
+                <div className="flex justify-end mb-4">
+                    <div className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${isCloudEnabled ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'}`}>
+                        <CloudIcon className="w-3.5 h-3.5 mr-1.5" />
+                        <span className="flex items-center gap-1.5">
+                            {isCloudEnabled ? 'Cloud Synced' : 'Local Storage'}
+                            <span className={`relative flex h-2 w-2`}>
+                              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCloudEnabled ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
+                              <span className={`relative inline-flex rounded-full h-2 w-2 ${isCloudEnabled ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
                 {/* Stats */}
                 <div className="grid grid-cols-1 gap-5 mb-8 sm:grid-cols-2 lg:grid-cols-4">
                     <StatCard icon={<MoneyIcon className="w-6 h-6"/>} title="Total Advance" value={`PKR ${totalAdvance.toLocaleString()}`} color="from-green-400 to-green-500"/>
@@ -254,7 +274,13 @@ const Dashboard: React.FC = () => {
                             </label>
                         </div>
                     </div>
-                    <LogTable logs={filteredLogs} onEdit={handleEdit} onDelete={handleDelete} onToggleComplete={handleToggleComplete} />
+                    <LogTable 
+                        logs={filteredLogs} 
+                        onEdit={handleEdit} 
+                        onDelete={handleDelete} 
+                        onToggleComplete={handleToggleComplete} 
+                        isLoading={isLoading}
+                    />
                 </div>
             </main>
 

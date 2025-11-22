@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogEntry, WorkType } from '../types';
 import { WhatsappIcon } from './icons/WhatsappIcon';
+import { ImageIcon } from './icons/ImageIcon';
 
 interface LogFormProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ const LogForm: React.FC<LogFormProps> = ({ isOpen, onClose, onSave, logToEdit })
   const [workType, setWorkType] = useState<WorkType>(WorkType.NumberPlate);
   const [advance, setAdvance] = useState('');
   const [baqaya, setBaqaya] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   
   useEffect(() => {
     if (logToEdit) {
@@ -27,6 +29,7 @@ const LogForm: React.FC<LogFormProps> = ({ isOpen, onClose, onSave, logToEdit })
       setWorkType(logToEdit.workType);
       setAdvance(logToEdit.advance.toString());
       setBaqaya(logToEdit.baqaya.toString());
+      setImageUrl(logToEdit.imageUrl);
     } else {
       resetForm();
     }
@@ -40,6 +43,18 @@ const LogForm: React.FC<LogFormProps> = ({ isOpen, onClose, onSave, logToEdit })
     setWorkType(WorkType.NumberPlate);
     setAdvance('');
     setBaqaya('');
+    setImageUrl(undefined);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,12 +71,13 @@ const LogForm: React.FC<LogFormProps> = ({ isOpen, onClose, onSave, logToEdit })
         workType, 
         advance: parseFloat(advance) || 0,
         baqaya: parseFloat(baqaya) || 0,
+        imageUrl: imageUrl,
     };
 
     if (logToEdit) {
       onSave({ ...logToEdit, ...logData });
     } else {
-      onSave({ ...logData, createdAt: Date.now() });
+      onSave(logData as Omit<LogEntry, 'id' | 'serialNumber' | 'createdAt' | 'isComplete'>);
     }
     resetForm();
     onClose();
@@ -80,6 +96,7 @@ const LogForm: React.FC<LogFormProps> = ({ isOpen, onClose, onSave, logToEdit })
                     `*Plate/Name:* ${numberPlate || 'N/A'}\n` +
                     `*Sticker:* ${sticker || 'N/A'}\n` +
                     `*Description:* ${description || 'N/A'}\n` +
+                    `*Image Attached:* ${imageUrl ? 'Yes' : 'No'}\n` +
                     `------------------\n` +
                     `*Advance Paid:* PKR ${advance || 0}\n` +
                     `*Balance Due:* PKR ${baqaya || 0}\n\n` +
@@ -151,6 +168,31 @@ const LogForm: React.FC<LogFormProps> = ({ isOpen, onClose, onSave, logToEdit })
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Image</label>
+            <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors duration-300 bg-white border rounded-full cursor-pointer text-slate-700 hover:bg-slate-100 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>{imageUrl ? 'Change Image' : 'Upload Image'}</span>
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                </label>
+              {imageUrl && (
+                <div className="relative group">
+                  <img src={imageUrl} alt="Preview" className="object-cover w-16 h-16 rounded-lg" />
+                  <button 
+                    type="button" 
+                    onClick={() => setImageUrl(undefined)}
+                    className="absolute top-0 right-0 flex items-center justify-center w-6 h-6 transition-opacity bg-red-500 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label="Remove image"
+                  >
+                    <span className="text-lg font-bold text-white">&times;</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="flex justify-end pt-4 space-x-4">
             <button type="button" onClick={onClose} className="px-5 py-2.5 font-semibold transition-colors duration-300 bg-white border rounded-full text-slate-700 hover:bg-slate-100 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-300 dark:focus:ring-slate-600">Cancel</button>
             <button type="submit" className="px-6 py-2.5 font-semibold text-white transition-all duration-300 rounded-full shadow-lg bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-800">Save</button>

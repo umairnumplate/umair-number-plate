@@ -16,7 +16,7 @@ const toCsvRow = (row: string[]): string => {
 };
 
 export const exportToCsv = (logs: LogEntry[]) => {
-  const headers = ['Serial Number', 'Date & Time', 'Number Plate', 'Sticker', 'Description', 'Phone Number', 'Work Type', 'Status', 'Advance', 'Baqaya'];
+  const headers = ['Serial Number', 'Date & Time', 'Number Plate', 'Sticker', 'Description', 'Phone Number', 'Work Type', 'Status', 'Advance', 'Baqaya', 'Image URL'];
   const rows = logs.map(log => [
     log.serialNumber.toString(),
     formatDate(log.createdAt),
@@ -28,6 +28,7 @@ export const exportToCsv = (logs: LogEntry[]) => {
     log.isComplete ? 'Complete' : 'Pending',
     log.advance.toString(),
     log.baqaya.toString(),
+    log.imageUrl || '',
   ]);
 
   const csvContent = [
@@ -47,7 +48,7 @@ export const exportToCsv = (logs: LogEntry[]) => {
 };
 
 export const generateTabSeparated = (logs: LogEntry[]): string => {
-  const headers = ['Serial Number', 'Date & Time', 'Number Plate', 'Sticker', 'Description', 'Phone Number', 'Work Type', 'Status', 'Advance', 'Baqaya'];
+  const headers = ['Serial Number', 'Date & Time', 'Number Plate', 'Sticker', 'Description', 'Phone Number', 'Work Type', 'Status', 'Advance', 'Baqaya', 'Image URL'];
   const rows = logs.map(log => [
     log.serialNumber.toString(),
     formatDate(log.createdAt),
@@ -59,6 +60,7 @@ export const generateTabSeparated = (logs: LogEntry[]): string => {
     log.isComplete ? 'Complete' : 'Pending',
     `PKR ${log.advance}`,
     `PKR ${log.baqaya}`,
+    log.imageUrl || '',
   ].join('\t'));
 
   return [headers.join('\t'), ...rows].join('\n');
@@ -74,6 +76,7 @@ export const formatSingleRecord = (log: LogEntry): string => {
            `*Plate/Name:* ${log.numberPlate || 'N/A'}\n` +
            `*Sticker:* ${log.sticker || 'N/A'}\n` +
            `*Description:* ${log.description || 'N/A'}\n` +
+           `*Image Attached:* ${log.imageUrl ? 'Yes' : 'No'}\n` +
            `*Phone:* ${log.phoneNumber || 'N/A'}\n` +
            `*Work Type:* ${log.workType}\n` +
            `------------------\n` +

@@ -18,4 +18,5 @@ export interface LogEntry {
   advance: number;
   baqaya: number;
   isComplete: boolean;
+  imageUrl?: string;
 }
